@@ -37,7 +37,7 @@ class Projection(window.Window):
         #Let all of the arguments pass through
         self.win = window.Window.__init__(self, *args, **kwargs)
         
-        clock.schedule_interval(self.update, 1.0/60) # update at FPS of Hz
+        clock.schedule_interval(self.update, 1.0/30) # update at FPS of Hz
         
         # load object animations to be drawn
         self.drawableObjects = []
@@ -121,8 +121,8 @@ class Projection(window.Window):
                 self.drawing = True
             else:
                 self.drawing = False
-                       
-            
+
+    def update_score(self):
         # update on score behavior
         if self.score < 3:
             self.idraw = 0
@@ -155,6 +155,9 @@ class Projection(window.Window):
         
                     
     def on_draw(self):
+        
+        self.update_score()
+        
         self.clear() # clearing buffer
         #clock.tick() # ticking the clock
             
@@ -171,7 +174,7 @@ class Projection(window.Window):
                 self.track.play()
                 self.score += 1
             
-            # end of if, saves state
+            # end of if drawing, saves state
             self.prev_drawing = True
             self.timelastdraw = time.time()
             
