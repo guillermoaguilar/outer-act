@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
+# TODO: 
+# do it fullscreen with bigger images
+# replicate behavior from scratch script: score, min time to present, and reset after no motion detected for x amount of time.
+# animations x 2. 2nd happens when score > 3
+# animations with ImageGrid, see performance.
+# sound
+#
+# 
 ##
 import random, math
 import pyglet
@@ -32,30 +40,104 @@ class Projection(window.Window):
         
         clock.schedule_interval(self.update, 1.0/60) # update at FPS of Hz
         
-        # reading and saving images
-        imsprite1 = pyglet.image.load('1.png')
-        #imsprite2 = pyglet.image.load('2.png')
-        #imsprite3 = pyglet.image.load('3.png')
-        #imsprite4 = pyglet.image.load('4.png')
+        # container for drawable objects
+        self.drawableObjects = []
+        self.createDrawableObjects()
         
-        self.sprite1 = pyglet.sprite.Sprite(imsprite1)
+        # reading and saving images
+        #image_frames = ('1.png', '2.png', '3.png', '4.png')
+        #
+        #images = map(lambda img: pyglet.image.load(img), image_frames)
+        #
+        #animation = pyglet.image.Animation.from_image_sequence(
+        #    images, 0.25)
+        #
+        #self.animSprite = pyglet.sprite.Sprite(animation, x=0, y=0)
+        #self.animSprite.update( scale_x=1, scale_y=1)
+        
         
         # instantiating a Vision  object
         self.vision = Vision()
         
+        #
+        self.drawing = False
+        self.anim_length = 1*10 #in seconds
+        
+        self.motionstart = None
+        self.score = 0
+
+    def createDrawableObjects(self):
+        """
+        Create the objects (sprites) for drawing within the
+        pyglet Window.
+        """
+        num_rows = 4
+        num_columns = 1
+        droplet = 'imgs/Sprite_01_Film_Stripe.png'
+        animation = self.setup_animation(droplet,
+                                         num_rows,
+                                         num_columns)
+
+        self.dropletSprite = pyglet.sprite.Sprite(animation)
+        self.dropletSprite.position = (400,200)
+
+        # Add these sprites to the list of drawables
+        self.drawableObjects.append(self.dropletSprite)
+
+    def setup_animation(self, img, num_rows, num_columns):
+        """
+        Create animation object using different regions of
+        a single image.
+        @param img: The image file path
+        @type img: string
+        @param num_rows: Number of rows in the image grid
+        @type num_rows: int
+        @param num_columns: Number of columns in the image grid
+        @type num_columns: int
+        """
+        base_image = pyglet.image.load(img)
+        animation_grid = pyglet.image.ImageGrid(base_image,
+                                                num_rows,
+                                                num_columns)
+        image_frames = []
+
+        for i in range(num_rows*num_columns, 0, -1):
+            frame = animation_grid[i-1]
+            animation_frame = pyglet.image.AnimationFrame(frame, 0.2)
+            image_frames.append(animation_frame)
+
+        animation = pyglet.image.Animation(image_frames)
+        return animation
         
     def update(self, dt):
+
         # ask to vision object to update itself
         self.vision.update()
         
+        if self.vision.motion:
+                self.motionstart = time.time()
+                self.score += 1
+        
+        currtime = time.time()
+        
+        if self.motionstart is not None:
+                if currtime  < (self.motionstart + self.anim_length):
+                        self.drawing = True
+                else:
+                        self.drawing = False
+                        
+                
 
     def on_draw(self):
         self.clear() # clearing buffer
         clock.tick() # ticking the clock
             
-        if self.vision.motion:
+        if self.drawing:
+                
             # draw sprite
-            self.sprite1.draw()
+            #self.animSprite.draw()
+            for d in self.drawableObjects:
+                d.draw()
             
             
         # flipping
@@ -90,8 +172,6 @@ class Vision():
         self.avg = None
         self.lastUploaded = datetime.datetime.now()
         self.motionCounter = 0
-
-        
         self.motion = False
 
     def update(self):
@@ -178,7 +258,9 @@ class Vision():
 ###################################################################
   
 if __name__ == "__main__":
-    win = Projection(caption="Outer act", height=600, width=600)
+    #win = Projection(caption="Outer act", width=800, height = 600)
+    win = Projection(caption="Outer act", fullscreen = True)
+
     pyglet.app.run()
 
 
