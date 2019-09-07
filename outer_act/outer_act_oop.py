@@ -21,7 +21,7 @@ from pyglet import font
 from pyglet.window import key 
 import time
 
-debug = True
+debug = False
 
 if debug:
     from vision_mock import Vision
@@ -55,7 +55,10 @@ class Projection(window.Window):
         #
         self.drawing = False
         self.prev_drawing = False
-        self.anim_length = 1*3  # in seconds
+        self.timelastdraw = 0
+        self.maxlag = 30 # seconds
+        
+        self.anim_length = 1*5  # in seconds
         
         self.motionstart = None
         self.score = 0
@@ -132,7 +135,15 @@ class Projection(window.Window):
             self.idraw = 0
             self.score = 0
         
+        # if so much time have pass, returns score to zero
+        if time.time() > (self.timelastdraw + self.maxlag):
+                self.score = 0
+                self.idraw = 0
+                
+        # creates label to show current score
         self.create_label()
+        
+        
         
     def create_label(self):
         
@@ -145,7 +156,7 @@ class Projection(window.Window):
                     
     def on_draw(self):
         self.clear() # clearing buffer
-        clock.tick() # ticking the clock
+        #clock.tick() # ticking the clock
             
         if self.drawing:
             
@@ -155,13 +166,14 @@ class Projection(window.Window):
             # 
             self.label.draw()
             
-            # 
+            # if this is the first draw, so previouly it was false
             if not self.prev_drawing:
                 self.track.play()
                 self.score += 1
             
             # end of if, saves state
             self.prev_drawing = True
+            self.timelastdraw = time.time()
             
         else:
             self.prev_drawing = False
